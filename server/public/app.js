@@ -440,7 +440,12 @@ function getHeaders() {
 function setLanguage(lang) {
   currentLanguage = lang;
   localStorage.setItem('language', lang);
-  document.getElementById('language-select').value = lang;
+  
+  const desktopSelect = document.getElementById('language-select');
+  if (desktopSelect) desktopSelect.value = lang;
+  
+  const mobileSelect = document.getElementById('mobile-language-select');
+  if (mobileSelect) mobileSelect.value = lang;
   
   // Update translation nodes marked with data-t
   document.querySelectorAll('[data-t]').forEach(el => {
@@ -488,7 +493,8 @@ function getTranslationByPath(lang, path) {
 // Routing Engine
 // -------------------------------------------------------------
 function navigateToView() {
-  const hash = window.location.locationHash || window.location.hash || '#home';
+  let hash = window.location.hash || '#home';
+  if (hash === '#') hash = '#home';
   const cleanHash = hash.replace('#', '');
   
   // Hide all sections
@@ -558,20 +564,39 @@ function updateAuthUI() {
   const userName = document.getElementById('user-name');
   const adminBadge = document.getElementById('admin-badge');
 
+  const mobileAuthButtons = document.getElementById('mobile-auth-buttons');
+  const mobileUserProfileMenu = document.getElementById('mobile-user-profile-menu');
+  const mobileUserAvatar = document.getElementById('mobile-user-avatar');
+  const mobileUserName = document.getElementById('mobile-user-name');
+  const mobileAdminBadge = document.getElementById('mobile-admin-badge');
+
   if (currentUser) {
-    authButtons.classList.add('hidden');
-    userProfileMenu.classList.remove('hidden');
-    userAvatar.textContent = currentUser.name.charAt(0).toUpperCase();
-    userName.textContent = currentUser.name;
+    if (authButtons) authButtons.classList.add('hidden');
+    if (mobileAuthButtons) mobileAuthButtons.classList.add('hidden');
+    
+    if (userProfileMenu) userProfileMenu.classList.remove('hidden');
+    if (mobileUserProfileMenu) mobileUserProfileMenu.classList.remove('hidden');
+    
+    const initial = currentUser.name.charAt(0).toUpperCase();
+    if (userAvatar) userAvatar.textContent = initial;
+    if (mobileUserAvatar) mobileUserAvatar.textContent = initial;
+    
+    if (userName) userName.textContent = currentUser.name;
+    if (mobileUserName) mobileUserName.textContent = currentUser.name;
     
     if (currentUser.role === 'admin') {
-      adminBadge.classList.remove('hidden');
+      if (adminBadge) adminBadge.classList.remove('hidden');
+      if (mobileAdminBadge) mobileAdminBadge.classList.remove('hidden');
     } else {
-      adminBadge.classList.add('hidden');
+      if (adminBadge) adminBadge.classList.add('hidden');
+      if (mobileAdminBadge) mobileAdminBadge.classList.add('hidden');
     }
   } else {
-    authButtons.classList.remove('hidden');
-    userProfileMenu.classList.add('hidden');
+    if (authButtons) authButtons.classList.remove('hidden');
+    if (mobileAuthButtons) mobileAuthButtons.classList.remove('hidden');
+    
+    if (userProfileMenu) userProfileMenu.classList.add('hidden');
+    if (mobileUserProfileMenu) mobileUserProfileMenu.classList.add('hidden');
   }
   if (typeof setupAdminPanel === 'function') {
     setupAdminPanel();
@@ -1941,10 +1966,34 @@ document.getElementById('language-select').addEventListener('change', (e) => {
   setLanguage(e.target.value);
 });
 
+// Mobile Language Swapping selection listener
+document.getElementById('mobile-language-select')?.addEventListener('change', (e) => {
+  setLanguage(e.target.value);
+});
+
+// Mobile logout trigger
+document.getElementById('mobile-logout-btn')?.addEventListener('click', () => {
+  currentUser = null;
+  localStorage.removeItem('user');
+  updateAuthUI();
+  window.location.hash = '#home';
+});
+
 // Hashchange event handlers
 window.addEventListener('hashchange', navigateToView);
 window.addEventListener('load', () => {
   setLanguage(currentLanguage);
   updateAuthUI();
-  navigateToView();
+  
+  // Ensure the page redirects to #home on clean load (empty hash) or invalid hash
+  const validViews = ['home', 'crop-prices', 'weather', 'schemes', 'knowledge', 'pest', 'expert', 'soil', 'login', 'register', 'profile', 'admin'];
+  const hash = window.location.hash;
+  const cleanHash = hash.replace('#', '');
+  const isDetailsView = cleanHash.startsWith('schemes/');
+  
+  if (!hash || hash === '#' || (!validViews.includes(cleanHash) && !isDetailsView)) {
+    window.location.hash = '#home';
+  } else {
+    navigateToView();
+  }
 });

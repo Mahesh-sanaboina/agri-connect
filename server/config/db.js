@@ -1,27 +1,13 @@
-const mongoose = require('mongoose');
-
-let cachedConn = null;
+const InMemoryDatabase = require('../models/InMemoryDatabase');
 
 const connectDB = async () => {
-  if (cachedConn) {
-    return cachedConn;
-  }
-
-  if (!process.env.MONGODB_URI) {
-    console.error('❌ MONGODB_URI environment variable is missing.');
-    return null;
-  }
-
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
-    cachedConn = conn;
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    return conn;
+    console.log('🔄 Initializing in-memory database...');
+    await InMemoryDatabase.initialize();
+    console.log('✅ In-memory database initialized successfully with seed data!');
   } catch (error) {
-    console.error(`❌ MongoDB Connection Error: ${error.message}`);
-    throw error;
+    console.error(`❌ In-memory database initialization failed: ${error.message}`);
   }
 };
 
 module.exports = connectDB;
-

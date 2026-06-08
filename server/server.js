@@ -7,11 +7,6 @@ const connectDB = require('./config/db');
 // Load environment variables
 dotenv.config();
 
-// Connect to database
-connectDB().catch(err => {
-  console.error('⚠️ Database connection failed on startup:', err.message);
-});
-
 const app = express();
 
 // Middleware
@@ -21,6 +16,13 @@ app.use(express.urlencoded({ extended: true }));
 
 // Serve static assets
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Ensure in-memory database is initialized before handling any API request
+const dbReady = connectDB();
+app.use('/api', async (req, res, next) => {
+  await dbReady;
+  next();
+});
 
 // API Routes
 app.use('/api/auth', require('./routes/authRoutes'));
@@ -64,4 +66,3 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 module.exports = app;
-
